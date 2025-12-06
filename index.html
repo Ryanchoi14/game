@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<title>2048 게임</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: #faf8ef;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+    }
+
+    /* 시작 화면 */
+    #start-screen {
+        text-align: center;
+    }
+    .mode-btn {
+        padding: 15px 30px;
+        margin: 10px;
+        background: #8f7a66;
+        color: #fff;
+        border-radius: 10px;
+        font-size: 20px;
+        border: none;
+        cursor: pointer;
+    }
+
+    /* 게임 영역 */
+    #game-container {
+        display: none;
+        text-align: center;
+    }
+
+    #grid {
+        width: 340px;
+        height: 340px;
+        background: #bbada0;
+        padding: 10px;
+        border-radius: 10px;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        grid-gap: 10px;
+        margin: auto;
+    }
+
+    .tile {
+        width: 100%;
+        height: 100%;
+        background: #cdc1b4;
+        border-radius: 5px;
+        font-size: 35px;
+        font-weight: bold;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #776e65;
+    }
+</style>
+</head>
+
+<body>
+
+<!-- 시작 화면 -->
+<div id="start-screen">
+    <h1>2048 게임</h1>
+    <p>플레이 모드를 선택하세요</p>
+    <button class="mode-btn" onclick="startGame('mobile')">📱 모바일</button>
+    <button class="mode-btn" onclick="startGame('pc')">💻 컴퓨터</button>
+</div>
+
+<!-- 게임 화면 -->
+<div id="game-container">
+    <h2>2048</h2>
+    <div id="grid"></div>
+    <p>← ↑ ↓ → 키로 플레이하세요</p>
+</div>
+
+<script>
+/* ======= 시작 화면 ======= */
+function startGame(mode) {
+    document.getElementById("start-screen").style.display = "none";
+    document.getElementById("game-container").style.display = "block";
+
+    // 모바일은 더 크게
+    if (mode === "mobile") {
+        document.getElementById("grid").style.width = "90vw";
+        document.getElementById("grid").style.height = "90vw";
+    }
+
+    initGrid();
+}
+
+/* ======= 2048 게임 로직 ======= */
+let grid;
+
+function initGrid() {
+    const gridElem = document.getElementById("grid");
+    gridElem.innerHTML = "";
+
+    grid = [];
+    for (let i = 0; i < 4; i++) {
+        grid[i] = [];
+        for (let j = 0; j < 4; j++) {
+            const tile = document.createElement("div");
+            tile.className = "tile";
+            tile.setAttribute("data-row", i);
+            tile.setAttribute("data-col", j);
+            tile.innerText = "";
+            gridElem.appendChild(tile);
+            grid[i][j] = 0;
+        }
+    }
+
+    addRandomTile();
+    addRandomTile();
+    updateGrid();
+}
+
+function addRandomTile() {
+    let empty = [];
+    for (let i = 0; i < 4; i++)
+        for (let j = 0; j < 4; j++)
+            if (grid[i][j] === 0) empty.push([i, j]);
+
+    if (empty.length === 0) return;
+
+    const [r, c] = empty[Math.floor(Math.random() * empty.length)];
+    grid[r][c] = Math.random() > 0.1 ? 2 : 4;
+}
+
+function updateGrid() {
+    for (let i = 0; i < 4; i++)
+        for (let j = 0; j < 4; j++) {
+            const tile = document.querySelector(`[data-row='${i}'][data-col='${j}']`);
+            tile.innerText = grid[i][j] === 0 ? "" : grid[i][j];
+        }
+}
+
+/* 이동 */
+document.addEventListener("keydown", e => {
+    let moved = false;
+
+    if (e.key === "ArrowLeft") moved = moveLeft();
+    else if (e.key === "ArrowRight") moved = moveRight();
+    else if (e.key === "ArrowUp") moved = moveUp();
+    else if (e.key === "ArrowDown") moved = moveDown();
+
+    if (moved) {
+        addRandomTile();
+        updateGrid();
+    }
+});
+
+function moveLeft() {
+    let moved = false;
+    for (let i = 0; i < 4; i++) {
+        let row = grid[i].filter(v => v !== 0);
+        for (let j = 0; j < row.length - 1; j++) {
+            if (row[j] === row[j+1]) {
+                row[j] *= 2;
+                row[j+1] = 0;
+            }
+        }
+        row = row.filter(v => v !== 0);
+        while (row.length < 4) row.push(0);
+        if (row.toString() !== grid[i].toString()) moved = true;
+        grid[i] = row;
+    }
+    return moved;
+}
+
+function moveRight() {
+    reverseGrid();
+    let moved = moveLeft();
+    reverseGrid();
+    return moved;
+}
+function reverseGrid() {
+    for (let i = 0; i < 4; i++) grid[i].reverse();
+}
+
+function moveUp() {
+    rotateGrid();
+    let moved = moveLeft();
+    rotateGrid();
+    rotateGrid();
+    rotateGrid();
+    return moved;
+}
+
+function moveDown() {
+    rotateGrid();
+    let moved = moveRight();
+    rotateGrid();
+    rotateGrid();
+    rotateGrid();
+    return moved;
+}
+
+function rotateGrid() {
+    let newGrid = [[], [], [], []];
+    for (let i = 0; i < 4; i++)
+        for (let j = 0; j < 4; j++)
+            newGrid[j][3 - i] = grid[i][j];
+    grid = newGrid;
+}
+</script>
+
+</body>
+</html>
